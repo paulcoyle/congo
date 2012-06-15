@@ -45,8 +45,8 @@ func (h *Handler) SetTemplateStore(store *template.Template) *Handler {
 // Appends a HandlerAction to the action chain for this Handler.  See the type
 // description of HandlerAction for details on it.
 func (h *Handler) Action(ep HandlerAction) *Handler {
-  actionMutex.Lock()
-  defer actionMutex.Unlock()
+  h.actionMutex.Lock()
+  defer h.actionMutex.Unlock()
   h.actions = append(h.actions, ep)
   return h
 }
@@ -55,8 +55,8 @@ func (h *Handler) Action(ep HandlerAction) *Handler {
 func (h *Handler) applyActions(context Context) (Context, interface{}) {
   var response interface{} = nil
 
-  actionMutex.RLock()
-  defer actionMutex.RUnlock()
+  h.actionMutex.RLock()
+  defer h.actionMutex.RUnlock()
 
   for _, action := range h.actions {
     newContext, newResponse := action(context)
