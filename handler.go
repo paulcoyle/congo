@@ -1,8 +1,8 @@
 package congo
 
 import (
-  "net/http"
   "html/template"
+  "net/http"
 )
 
 // HandlerAction accept a Context interface and optionally return that
