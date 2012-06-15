@@ -3,6 +3,7 @@ package congo
 import (
   "html/template"
   "net/http"
+  "sync"
 )
 
 // HandlerActions accept a Context interface and optionally return that
@@ -15,6 +16,7 @@ type HandlerAction (func(Context) (Context, interface{}))
 type Handler struct {
   templateStore *template.Template
   actions       []HandlerAction
+  actionMutex   sync.RWMutex
 }
 
 func NewHandler() *Handler {
@@ -43,6 +45,8 @@ func (h *Handler) SetTemplateStore(store *template.Template) *Handler {
 // Appends a HandlerAction to the action chain for this Handler.  See the type
 // description of HandlerAction for details on it.
 func (h *Handler) Action(ep HandlerAction) *Handler {
+  actionMutex.Lock()
+  defer actionMutex.Unlock()
   h.actions = append(h.actions, ep)
   return h
 }
@@ -50,6 +54,9 @@ func (h *Handler) Action(ep HandlerAction) *Handler {
 // TODO: doc
 func (h *Handler) applyActions(context Context) (Context, interface{}) {
   var response interface{} = nil
+
+  actionMutex.RLock()
+  defer actionMutex.RUnlock()
 
   for _, action := range h.actions {
     newContext, newResponse := action(context)
