@@ -5,12 +5,11 @@ import (
   "net/http"
 )
 
-// HandlerAction accept a Context interface and optionally return that
+// HandlerActions accept a Context interface and optionally return that
 // same Context back or another implementation of Context paired with
 // any of the responses available in responses.go as the second return value
-// (optionally nil).  HandlerAction registered as actions in a Handler that
-// return a response cause the chain of actions to halt for that particular
-// Handler when it is invoked.
+// (optionally nil).  HandlerActions that return a response will cause the
+// chain of actions to halt for its particular Handler when invoked.
 type HandlerAction (func(Context) (Context, interface{}))
 
 type Handler struct {
@@ -49,20 +48,18 @@ func (h *Handler) Action(ep HandlerAction) *Handler {
 }
 
 // TODO: doc
-func (h *Handler) applyActions(context Context) (bool, Context, interface{}) {
+func (h *Handler) applyActions(context Context) (Context, interface{}) {
   var response interface{} = nil
 
   for _, action := range h.actions {
     newContext, newResponse := action(context)
     // If the return value is non-nil, check that it still implements the
-    // HandlerAction interface.  If not, return false with a nil resulting
-    // context and nil response indicating that there was a failure.
-    // Otherwise, keep going.
+    // HandlerAction interface.  If not, the method will panic.
     if newContext != nil {
       if assertContext, ok := newContext.(Context); ok {
         context = assertContext
       } else {
-        return false, nil, nil
+        panic("Resulting context does not implement congo.Context")
       }
     }
 
@@ -73,7 +70,7 @@ func (h *Handler) applyActions(context Context) (bool, Context, interface{}) {
     }
   }
 
-  return true, context, response
+  return context, response
 }
 
 // TODO: doc
@@ -85,16 +82,9 @@ func Handle(h *Handler) func(http.ResponseWriter, *http.Request) {
     // applied in order with the "action" applied last). Each of these can
     // modify the context or return a response (those defined in responses.go)
     //ok, newCtx, response := h.applyActions(ctx)
-    _, newCtx, _ := h.applyActions(ctx)
+    newCtx, _ := h.applyActions(ctx)
     // TODO: check for ok (false means failure in applying HandlerAction chain)
     // TODO: check for nil response (there should be one at this point)
-
-    // The resulting context must implement Context.
-    if _, ok := newCtx.(Context); ok {
-      ctx = newCtx
-    } else {
-      panic("Resulting context does not implement congo.Context")
-    }
 
     // act on action response for any template rendering, etc.
 
