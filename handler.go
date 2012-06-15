@@ -2,7 +2,7 @@ package congo
 
 import (
   "html/template"
-  "log"
+  "io"
   "net/http"
   "sync"
 )
@@ -64,7 +64,9 @@ func (h *Handler) Copy() *Handler {
   return copy
 }
 
-// TODO: doc
+// Runs the chain of HandlerActions beginning with the given context.  The
+// return values from this represent the final context and response given
+// by the last HandlerAction to return a response.
 func (h *Handler) applyActions(context Context) (Context, interface{}) {
   var response interface{} = nil
 
@@ -73,8 +75,8 @@ func (h *Handler) applyActions(context Context) (Context, interface{}) {
 
   for _, action := range h.actions {
     newContext, newResponse := action(context)
-    // If the return value is non-nil, check that it still implements the
-    // HandlerAction interface.  If not, the method will panic.
+    // If the context return value is non-nil, check that it still implements
+    // the Context interface.  If not, the method will panic.
     if newContext != nil {
       if assertContext, ok := newContext.(Context); ok {
         context = assertContext
@@ -93,47 +95,63 @@ func (h *Handler) applyActions(context Context) (Context, interface{}) {
   return context, response
 }
 
-// TODO: doc
-func Handle(h *Handler) func(http.ResponseWriter, *http.Request) {
+// Returns a function that is compatible with the standard http Handler.
+func MuxHandler(h *Handler) func(http.ResponseWriter, *http.Request) {
   return func(w http.ResponseWriter, r *http.Request) {
-    var baseContext Context = NewBaseContext(r)
-
-    //newCtx, response := h.applyActions(ctx)
-    context, response := h.applyActions(baseContext)
+    context, response := h.applyActions(NewBaseContext(w, r))
 
     // We must have a response in order to do anything.
     if response == nil {
       panic("No response given after handler action chain executed")
     }
 
-    // Perform any rendering needed for a given response.  This method is only
-    // concerned with any template rendering or related activity.  Any
-    // response types that do not deal with these activities are ignored here.
-    responseRenderStep(context, response)
-
-    // final response step
-    // TODO: doc
-    responseFinalizeStep(context, response)
+    h.responseRenderStep(context, response)
+    h.responseFinalizeStep(context, response)
   }
 }
 
-// TODO: doc
-func responseRenderStep(context Context, response interface{}) {
+// Performs any rendering needed for a given response.  This method is only
+// concerned with any template rendering or related activity.  Any
+// response types that do not deal with these activities are ignored here.
+func (h *Handler) responseRenderStep(context Context, response interface{}) {
   switch response.(type) {
   case *RenderResponse:
-    actual := response.(*RenderResponse)
-    log.Printf("RENDER TEMPLATE: %s", actual.Template)
+    // In this step, the inner template is rendered and written to the context
+    // where it's output is available from context.Content()
+    r := response.(*RenderResponse)
+    h.execTemplate(r.Template, context, context)
   }
 }
 
-// TODO: doc
-func responseFinalizeStep(context Context, response interface{}) {
+// Performs the finalizing step(s) for a given response.  This includes
+// sending appropriate headers etc. as well as rendering the layouts with the
+// contents of responses handled by responseRenderStep.
+func (h *Handler) responseFinalizeStep(context Context, response interface{}) {
   switch response.(type) {
   default:
     panic("Unknown response type")
   case *NullResponse:
   case *RenderResponse:
-    actual := response.(*RenderResponse)
-    log.Printf("RENDER TEMPLATE: %s", actual.Template)
+    // In this step, the layout template is rendered which should make use of
+    // the content from the render step by using {{.Content}} in the template.
+    r := response.(*RenderResponse)
+    h.execTemplate(r.Layout, context.ResponseWriter(), context)
+  case *RedirectResponse:
+    r := response.(*RedirectResponse)
+    http.Redirect(context.ResponseWriter(), context.Request(),
+      r.Path, http.StatusFound)
+  }
+}
+
+// Executes a template by name to be written to the writer with the context
+// supplied.  This is mainly a convenience method.
+func (h *Handler) execTemplate(name string, writer io.Writer, context Context) {
+  if h.templateStore == nil {
+    panic("No template store associated with handler")
+  }
+
+  err := h.templateStore.ExecuteTemplate(writer, name, context)
+  if err != nil {
+    panic("Template " + name + " could not be executed")
   }
 }

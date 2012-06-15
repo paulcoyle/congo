@@ -58,7 +58,7 @@ func TestActionsAppliedInOrder(t *testing.T) {
 
   handler := NewHandler()
   handler.Actions(ActionB, ActionA, ActionC)
-  handlerFn := Handle(handler)
+  handlerFn := MuxHandler(handler)
   handlerFn(nil, nil)
 
   expected := []string{"B", "A", "C"}
@@ -72,7 +72,7 @@ func TestCopyRetainsActionOrder(t *testing.T) {
 
   source := NewHandler()
   source.Actions(ActionB, ActionC)
-  sourceFn := Handle(source)
+  sourceFn := MuxHandler(source)
   sourceFn(nil, nil)
   sourceOrder := make([]string, len(appliedOrder))
   copy(sourceOrder, appliedOrder)
@@ -80,7 +80,7 @@ func TestCopyRetainsActionOrder(t *testing.T) {
   initAppliedOrder()
 
   copy := source.Copy()
-  copyFn := Handle(copy)
+  copyFn := MuxHandler(copy)
   copyFn(nil, nil)
 
   if !reflect.DeepEqual(appliedOrder, sourceOrder) {
@@ -91,7 +91,7 @@ func TestCopyRetainsActionOrder(t *testing.T) {
 func TestAlternateContextPassesThrough(t *testing.T) {
   handler := NewHandler()
   handler.Actions(ActionAltContext, ActionPostAltContext)
-  handlerFn := Handle(handler)
+  handlerFn := MuxHandler(handler)
   handlerFn(nil, nil)
 
   if !altContextAssertion {
@@ -104,7 +104,7 @@ func TestAlternateContextPassesThrough(t *testing.T) {
 func TestNoResponseReturnedFromChainPanics(t *testing.T) {
   handler := NewHandler()
   handler.Actions(ActionA)
-  handlerFn := Handle(handler)
+  handlerFn := MuxHandler(handler)
 
   defer func() {
     if e := recover(); e == nil {
@@ -118,7 +118,7 @@ func TestNoResponseReturnedFromChainPanics(t *testing.T) {
 func TestUnknownResponseCausesPanic(t *testing.T) {
   handler := NewHandler()
   handler.Actions(ActionUnknownResponse)
-  handlerFn := Handle(handler)
+  handlerFn := MuxHandler(handler)
 
   defer func() {
     if e := recover(); e == nil {

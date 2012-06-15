@@ -5,13 +5,15 @@ import (
 )
 
 type Context interface {
+  ResponseWriter() http.ResponseWriter
   Request() *http.Request
   Content() string
   Write([]byte) (int, error)
 }
 
 type BaseContext struct {
-  request *http.Request
+  responseWriter http.ResponseWriter
+  request        *http.Request
   // content holds intermediate template results.  In Congo, the convention
   // (as in many large web frameworks) is to render a template specific to the
   // current action then inject it's result into a layout template that is
@@ -22,10 +24,16 @@ type BaseContext struct {
   content string
 }
 
-func NewBaseContext(r *http.Request) *BaseContext {
+func NewBaseContext(w http.ResponseWriter, r *http.Request) *BaseContext {
   return &BaseContext{
-    request: r,
+    responseWriter: w,
+    request:        r,
   }
+}
+
+// Returns the current response writer associated with the context.
+func (c *BaseContext) ResponseWriter() http.ResponseWriter {
+  return c.responseWriter
 }
 
 // Returns the current request associated with the context.

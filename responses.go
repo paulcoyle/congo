@@ -9,3 +9,7 @@ type RenderResponse struct {
   Template string
   Layout   string
 }
+
+type RedirectResponse struct {
+  Path string
+}
