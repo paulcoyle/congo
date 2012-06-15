@@ -2,6 +2,7 @@ package congo
 
 import (
   "html/template"
+  "log"
   "net/http"
   "sync"
 )
@@ -19,10 +20,11 @@ type Handler struct {
   actionMutex   sync.RWMutex
 }
 
+// Creates a new handler and returns a pointer to it.
 func NewHandler() *Handler {
   return &Handler{
-    defaultTemplateStore,
-    make([]HandlerAction, 0),
+    templateStore: defaultTemplateStore,
+    actions:       make([]HandlerAction, 0),
   }
 }
 
@@ -42,13 +44,24 @@ func (h *Handler) SetTemplateStore(store *template.Template) *Handler {
   return h
 }
 
-// Appends a HandlerAction to the action chain for this Handler.  See the type
-// description of HandlerAction for details on it.
-func (h *Handler) Action(ep HandlerAction) *Handler {
+// Appends a HandlerActions to the action chain for this Handler.  See the
+// type description of HandlerAction for details.
+func (h *Handler) Actions(a ...HandlerAction) *Handler {
   h.actionMutex.Lock()
   defer h.actionMutex.Unlock()
-  h.actions = append(h.actions, ep)
+  for _, action := range a {
+    h.actions = append(h.actions, action)
+  }
   return h
+}
+
+// Copies the HandlerActions and template store for a Handler to a new
+// instance and returns it.
+func (h *Handler) Copy() *Handler {
+  copy := NewHandler()
+  copy.Actions(h.actions...)
+  copy.templateStore = h.templateStore
+  return copy
 }
 
 // TODO: doc
@@ -83,18 +96,44 @@ func (h *Handler) applyActions(context Context) (Context, interface{}) {
 // TODO: doc
 func Handle(h *Handler) func(http.ResponseWriter, *http.Request) {
   return func(w http.ResponseWriter, r *http.Request) {
-    var ctx Context = NewBaseContext()
+    var baseContext Context = NewBaseContext(r)
 
-    // "apply" the actions (inside applyActions, the before actions are
-    // applied in order with the "action" applied last). Each of these can
-    // modify the context or return a response (those defined in responses.go)
-    //ok, newCtx, response := h.applyActions(ctx)
-    newCtx, _ := h.applyActions(ctx)
-    // TODO: check for ok (false means failure in applying HandlerAction chain)
-    // TODO: check for nil response (there should be one at this point)
+    //newCtx, response := h.applyActions(ctx)
+    context, response := h.applyActions(baseContext)
 
-    // act on action response for any template rendering, etc.
+    // We must have a response in order to do anything.
+    if response == nil {
+      panic("No response given after handler action chain executed")
+    }
 
-    // act on response for final actions (write to w, redirect, etc)
+    // Perform any rendering needed for a given response.  This method is only
+    // concerned with any template rendering or related activity.  Any
+    // response types that do not deal with these activities are ignored here.
+    responseRenderStep(context, response)
+
+    // final response step
+    // TODO: doc
+    responseFinalizeStep(context, response)
+  }
+}
+
+// TODO: doc
+func responseRenderStep(context Context, response interface{}) {
+  switch response.(type) {
+  case *RenderResponse:
+    actual := response.(*RenderResponse)
+    log.Printf("RENDER TEMPLATE: %s", actual.Template)
+  }
+}
+
+// TODO: doc
+func responseFinalizeStep(context Context, response interface{}) {
+  switch response.(type) {
+  default:
+    panic("Unknown response type")
+  case *NullResponse:
+  case *RenderResponse:
+    actual := response.(*RenderResponse)
+    log.Printf("RENDER TEMPLATE: %s", actual.Template)
   }
 }

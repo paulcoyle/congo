@@ -1,11 +1,17 @@
 package congo
 
+import (
+  "net/http"
+)
+
 type Context interface {
+  Request() *http.Request
   Content() string
   Write([]byte) (int, error)
 }
 
 type BaseContext struct {
+  request *http.Request
   // content holds intermediate template results.  In Congo, the convention
   // (as in many large web frameworks) is to render a template specific to the
   // current action then inject it's result into a layout template that is
@@ -16,8 +22,15 @@ type BaseContext struct {
   content string
 }
 
-func NewBaseContext() *BaseContext {
-  return &BaseContext{}
+func NewBaseContext(r *http.Request) *BaseContext {
+  return &BaseContext{
+    request: r,
+  }
+}
+
+// Returns the current request associated with the context.
+func (c *BaseContext) Request() *http.Request {
+  return c.request
 }
 
 // Returns the currently defined content.  In action templates this will be
