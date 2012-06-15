@@ -120,6 +120,9 @@ func (h *Handler) responseRenderStep(context Context, response interface{}) {
     // where it's output is available from context.Content()
     r := response.(*RenderResponse)
     h.execTemplate(r.Template, context, context)
+  case *NotFoundResponse:
+    r := response.(*NotFoundResponse)
+    h.execTemplate(r.Template, context, context)
   }
 }
 
@@ -140,6 +143,10 @@ func (h *Handler) responseFinalizeStep(context Context, response interface{}) {
     r := response.(*RedirectResponse)
     http.Redirect(context.ResponseWriter(), context.Request(),
       r.Path, http.StatusFound)
+  case *NotFoundResponse:
+    r := response.(*NotFoundResponse)
+    context.ResponseWriter().WriteHeader(http.StatusNotFound)
+    h.execTemplate(r.Layout, context.ResponseWriter(), context)
   }
 }
 

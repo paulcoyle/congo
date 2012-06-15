@@ -13,3 +13,8 @@ type RenderResponse struct {
 type RedirectResponse struct {
   Path string
 }
+
+type NotFoundResponse struct {
+  Template string
+  Layout   string
+}

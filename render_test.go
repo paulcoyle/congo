@@ -56,6 +56,14 @@ func ActionAugmentContextRenderTemplate(c Context) (Context, interface{}) {
   return aug, &RenderResponse{"inner", "layout"}
 }
 
+func ActionUndefinedTemplate(c Context) (Context, interface{}) {
+  return c, &RenderResponse{"undefined_inner", "layout"}
+}
+
+func ActionUndefinedLayout(c Context) (Context, interface{}) {
+  return c, &RenderResponse{"inner", "undefined_layout"}
+}
+
 func TestTemplateAndLayoutRender(t *testing.T) {
   responseWriter := &MockResponseWriter{}
   tpls := createBasicTemplates()
@@ -84,4 +92,38 @@ func TestTemplateAndLayoutRenderWithAugmentedContext(t *testing.T) {
   if responseWriter.Content != expected {
     t.Fail()
   }
+}
+
+func TestRenderingUndefinedTemplatePanics(t *testing.T) {
+  responseWriter := &MockResponseWriter{}
+  tpls := createBasicTemplates()
+
+  handler := NewHandler().SetTemplateStore(tpls)
+  handler.Actions(ActionUndefinedTemplate)
+  handlerFn := MuxHandler(handler)
+
+  defer func() {
+    if e := recover(); e == nil {
+      t.Fail()
+    }
+  }()
+
+  handlerFn(responseWriter, nil)
+}
+
+func TestRenderingUndefinedLayoutPanics(t *testing.T) {
+  responseWriter := &MockResponseWriter{}
+  tpls := createBasicTemplates()
+
+  handler := NewHandler().SetTemplateStore(tpls)
+  handler.Actions(ActionUndefinedLayout)
+  handlerFn := MuxHandler(handler)
+
+  defer func() {
+    if e := recover(); e == nil {
+      t.Fail()
+    }
+  }()
+
+  handlerFn(responseWriter, nil)
 }
