@@ -1,5 +1,4 @@
-Woah there bucko.  This is just a sketch right now and doesn't really do much
-of anything.  Congo is the product of a refactoring of some web related Go
-work I've been doing that has helped a bit when using the gorilla web toolkit.
-When this message is no longer here it probably means this code is actually
-useful.  Until then, pay no mind.
+The best way to see the simplest use is in `examples/basic.go`.
+
+More detailed documentation can be found in the source but a short tutorial
+with some explanations will be added here shortly.
