@@ -2,12 +2,13 @@ package congo
 
 import (
   "net/http"
+  "html/template"
 )
 
 type Context interface {
   ResponseWriter() http.ResponseWriter
   Request() *http.Request
-  Content() string
+  Content() template.HTML
   Write([]byte) (int, error)
 }
 
@@ -44,8 +45,8 @@ func (c *BaseContext) Request() *http.Request {
 // Returns the currently defined content.  In action templates this will be
 // not be set and is really only of interest when injecting action template
 // results into layouts.
-func (c *BaseContext) Content() string {
-  return c.content
+func (c *BaseContext) Content() template.HTML {
+  return template.HTML(c.content)
 }
 
 // This is used to implement the Writer interface so that we can render the
