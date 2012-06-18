@@ -2,7 +2,7 @@
 
 Congo provides a small but useful facility to add a chain of responsibility to
 http handlers (called "handler actions").  For those familiar  with Ruby on
-Rails, this is similar to before filters.
+Rails this is similar to before filters.
 
 During the execution of the chain, a context is passed to each action and is
 passed automatically to any html templates being rendered as the template
@@ -11,7 +11,7 @@ long as they implement `congo.Context`) to provide additional data or
 functionality to templates.
 
 The handler action chain will halt whenever an action returns a "response".
-There are a handlful of defined responses that represent basic things:
+There are a handful of defined responses that represent basic things:
 template rendering, redirecting (302) and returning 404.  Currently there is
 no facility to add custom responses but this is certainly a good candidate for
 a feature addition.
@@ -96,7 +96,7 @@ can only be accessed by a logged in user.
     loginHandler := rootHandler.Copy().Actions(loginHandler)
     accntHandler := rootHandler.Copy().Actions(requireLoggedIn, accountHandler)
 
-Here we've made copies of the root handler which retain it's previously
+Here we've made copies of the root handler which retain its previously
 defined `addSecureCookieContext` and `addAuthContext` actions and then
 appended other actions on to the end of the chains.
 
@@ -122,7 +122,7 @@ it's easiest to have a single store that is applied to all handlers for the
 sake of simplicity.
 
 Template stores are simply pointers to `template.Template` from the core
-`html/template` package.  Templates are refered to by the names defined within
+`html/template` package.  Templates are referred to by the names defined within
 these stores when returning a `congo.RenderResponse`.
 
 The layout concept is also borrowed from other web frameworks.  Templates are
