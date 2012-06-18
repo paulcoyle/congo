@@ -6,15 +6,15 @@ type NullResponse struct {
 }
 
 type RenderResponse struct {
-  Template string
-  Layout   string
+	Template string
+	Layout   string
 }
 
 type RedirectResponse struct {
-  Path string
+	Path string
 }
 
 type NotFoundResponse struct {
-  Template string
-  Layout   string
+	Template string
+	Layout   string
 }
