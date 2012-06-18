@@ -1,14 +1,14 @@
 # What Does it Do?
 
 Congo provides a small but useful facility to add a chain of responsibility to
-http handlers (each of which known a handler "action").  For those familiar
-with Ruby on Rails, this is similar to before filters.
+http handlers (called "handler actions").  For those familiar  with Ruby on
+Rails, this is similar to before filters.
 
 During the execution of the chain, a context is passed to each action and is
-passed automatically to any html templates being rendered as the data.  Along
-the way, one can augment the context with custom structures (so long as they
-implement `congo.Context`) to provide additional data or functionality to
-templates.
+passed automatically to any html templates being rendered as the template
+data.  Along the way, one can augment the context with custom structures (so
+long as they implement `congo.Context`) to provide additional data or
+functionality to templates.
 
 The handler action chain will halt whenever an action returns a "response".
 There are a handlful of defined responses that represent basic things:
